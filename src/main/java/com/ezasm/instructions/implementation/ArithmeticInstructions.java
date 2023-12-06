@@ -1,5 +1,8 @@
 package com.ezasm.instructions.implementation;
 
+import com.ezasm.instructions.targets.inputoutput.RegisterInputOutput;
+import com.ezasm.simulation.Memory;
+import com.ezasm.simulation.Registers;
 import com.ezasm.simulation.transform.TransformationSequence;
 import com.ezasm.simulation.transform.transformable.InputOutputTransformable;
 import com.ezasm.instructions.targets.input.IAbstractInput;
@@ -99,7 +102,21 @@ public class ArithmeticInstructions {
     @Instruction
     public TransformationSequence mul(IAbstractInputOutput output, IAbstractInput input1, IAbstractInput input2)
             throws SimulationException {
-        return arithmetic((a, b) -> a * b, output, input1, input2);
+        RegisterInputOutput l = new RegisterInputOutput(Registers.LO);
+        RegisterInputOutput h = new RegisterInputOutput(Registers.HI);
+
+        TransformationSequence t = new TransformationSequence();
+        t = t.concatenate(arithmetic((a, b) -> (long) a * b, output, input1, input2));
+        t = t.concatenate(arithmetic((a, b) -> {
+            long e = (long) a * (long) b;
+            return e % 4294967296L;
+        }, l, input1, input2));
+        t = t.concatenate(arithmetic((a, b) -> {
+            long e = (long) a * (long) b;
+            return e / 4294967296L;
+        }, h, input1, input2));
+
+        return t;
     }
 
     /**
@@ -116,7 +133,17 @@ public class ArithmeticInstructions {
         if (input2.get(simulator).intValue() == 0) {
             throw new IllegalArgumentException(-1);
         }
-        return arithmetic((a, b) -> a / b, output, input1, input2);
+        RegisterInputOutput l = new RegisterInputOutput(Registers.LO);
+        RegisterInputOutput h = new RegisterInputOutput(Registers.HI);
+
+        TransformationSequence t = new TransformationSequence();
+        TransformationSequence target = (arithmetic((a, b) -> a / b, output, input1, input2));
+
+        t = t.concatenate(target);
+        t = t.concatenate(arithmetic((a, b) -> a / b, l, input1, input2));
+        t = t.concatenate(arithmetic((a, b) -> a % b, h, input1, input2));
+
+        return t;
     }
 
     /**
@@ -198,7 +225,14 @@ public class ArithmeticInstructions {
     @Instruction
     public TransformationSequence sll(IAbstractInputOutput output, IAbstractInput input1, IAbstractInput input2)
             throws SimulationException {
-        return arithmetic((a, b) -> a << b, output, input1, input2);
+        return arithmetic((a, b) -> {
+            return (Math.abs(b) >= Memory.getWordSize() * 8L) ? 0L
+                    : b > 0 ? (long) Math.toIntExact(a) << b : (long) (Math.toIntExact(a) >>> -b);
+            // return (b > 0) ? ((long) Math.toIntExact(a) << Math.min(Memory.getWordSize()*8L-1,b)) : ( (-b>31) ?
+            // (long)0 : (long) (Math.toIntExact(a)>>>-b));
+            // return (b > 0) ? ((long) Math.toIntExact(a) << Math.min(63,b)) : ( (-b>31) ? (long)0 : (long)
+            // (Math.toIntExact(a)>>>-b));
+        }, output, input1, input2);
     }
 
     /**
@@ -212,7 +246,36 @@ public class ArithmeticInstructions {
     @Instruction
     public TransformationSequence srl(IAbstractInputOutput output, IAbstractInput input1, IAbstractInput input2)
             throws SimulationException {
-        return arithmetic((a, b) -> a >> b, output, input1, input2);
+        return arithmetic((a, b) -> {
+            return (Math.abs(b) >= Memory.getWordSize() * 8L) ? 0L
+                    : ((b > 0) ? (long) (Math.toIntExact(a) >>> b) : ((long) Math.toIntExact(a) << -b));
+            // return (b > 0) ? ((b>31) ? ((long) (0)) : ((long) (Math.toIntExact(a) >>> b)) ): ( ((long)
+            // Math.toIntExact(a) << Math.min(-b,Memory.getWordSize()*8L-1)));
+            // return (b > 0) ? ((long) (Math.toIntExact(a) >>> Math.min(31,b))) : ( ((long) Math.toIntExact(a) <<
+            // Math.min(-b,63)));
+        }, output, input1, input2);
+    }
+
+    // this makes it stop at 63, which will not eilimate the last value given a is negative
+    // also the internal java logic does mod 32 instead of 64 on the srl
+    /**
+     * The standard shift right arithmetic operation.
+     *
+     * @param output the output of the operation.
+     * @param input1 the left-hand side of the sra operation.
+     * @param input2 the right-hand side of the sra operation.
+     * @throws SimulationException if there is an error in accessing the simulation.
+     */
+    @Instruction
+    public TransformationSequence sra(IAbstractInputOutput output, IAbstractInput input1, IAbstractInput input2)
+            throws SimulationException {
+        // booleanExpression ? expression1 : expression2
+        return arithmetic((a, b) -> {
+            return (Math.abs(b) >= Memory.getWordSize() * 8L) ? ((a > 0 || b < 0) ? 0L : -1L)
+                    : ((b > 0) ? a >> b : a << -b);
+            // return b > 0 ? a >> Math.min(b,Memory.getWordSize()*8L-1) : a << Math.min(-b,Memory.getWordSize()*8L-1);
+            // first check if |b|>31 -> 0
+        }, output, input1, input2);
     }
 
     /**

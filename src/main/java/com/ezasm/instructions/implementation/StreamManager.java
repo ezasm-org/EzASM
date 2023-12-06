@@ -216,7 +216,7 @@ public class StreamManager {
     }
 
     /**
-     * Walks te stream forward through until it reaches the end-of-line sequence, then returns the read string.
+     * Walks the stream forward through until it reaches the end-of-line sequence, then returns the read string.
      *
      * @return the line string found.
      * @throws SimulationException            if an error occurs reading from the stream of if it ends while seeking a

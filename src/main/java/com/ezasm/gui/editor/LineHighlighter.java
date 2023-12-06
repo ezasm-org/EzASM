@@ -81,7 +81,7 @@ public class LineHighlighter extends DefaultHighlighter.DefaultHighlightPainter 
         try {
             textArea.getHighlighter().addHighlight(lineStartOffsets.get(currentFile).get(lineNumber),
                     lineEndOffsets.get(currentFile).get(lineNumber), this);
-            textArea.setCaretPosition(lineStartOffsets.get(currentFile).get(lineNumber));
+            textArea.setCaretPosition(lineStartOffsets.get(currentFile).get(lineNumber));// TODO: it's all this line
             textArea.repaint();
         } catch (BadLocationException e) {
             e.printStackTrace();

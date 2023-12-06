@@ -3,6 +3,7 @@ package com.ezasm.parsing;
 import com.ezasm.instructions.DispatchInstruction;
 import com.ezasm.instructions.InstructionDispatcher;
 import com.ezasm.instructions.targets.IAbstractTarget;
+import com.ezasm.instructions.targets.input.IAbstractInput;
 import com.ezasm.instructions.targets.input.ImmediateInput;
 import com.ezasm.instructions.targets.input.LabelReferenceInput;
 import com.ezasm.instructions.targets.input.StringInput;
@@ -108,6 +109,10 @@ public class Line {
         }
 
         return types;
+    }
+
+    public void setArgument(IAbstractTarget iat, int pos) {
+        arguments[pos] = iat;
     }
 
     /**

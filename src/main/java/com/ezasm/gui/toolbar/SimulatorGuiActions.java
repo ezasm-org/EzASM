@@ -194,7 +194,7 @@ public class SimulatorGuiActions {
         while (!Window.getInstance().getSimulator().isDone()
                 && (state == State.RUNNING || state == State.PAUSED || state == State.STEPPING)) {
             try {
-                runOneLine();
+                runOneLine();// TODO figure out why this will occasionally break
             } catch (SimulationInterruptedException ignored) { // Expected interruption from Stop or Reset
                 break;
             } catch (SimulationException e) {

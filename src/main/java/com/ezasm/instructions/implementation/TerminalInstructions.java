@@ -133,19 +133,39 @@ public class TerminalInstructions {
         FileReadTransformable f = new FileReadTransformable(simulator, streams().getCursor());
         String string = streams.readString();
 
-        int size = min(maxSize, string.length());
-        Transformation[] transformations = new Transformation[size + 1];
-        transformations[0] = f.transformation(new RawData(streams().getCursor()));
+        if (string.length() >= maxSize) {
+            int size = min(maxSize, string.length());
 
-        for (int i = 1; i < size; ++i) {
+            Transformation[] transformations = new Transformation[size + 1];
+            transformations[0] = f.transformation(new RawData(streams().getCursor()));
+
+            for (int i = 1; i < size; ++i) {
+                MemoryTransformable m = new MemoryTransformable(simulator, address);
+                transformations[i] = m.transformation(new RawData(string.charAt(i - 1)));
+                address = address + Memory.getWordSize();
+            }
             MemoryTransformable m = new MemoryTransformable(simulator, address);
-            transformations[i] = m.transformation(new RawData(string.charAt(i - 1)));
-            address = address + Memory.getWordSize();
-        }
-        MemoryTransformable m = new MemoryTransformable(simulator, address);
-        transformations[transformations.length - 1] = m.transformation(new RawData('\0'));
+            transformations[transformations.length - 1] = m.transformation(new RawData('\0'));
 
-        return new TransformationSequence(transformations);
+            return new TransformationSequence(transformations);
+        } // case where input >= size
+        else {
+            int size = min(maxSize, string.length());
+
+            Transformation[] transformations = new Transformation[size + 1];
+            transformations[0] = f.transformation(new RawData(streams().getCursor()));
+
+            for (int i = 0; i < size; ++i) {
+                MemoryTransformable m = new MemoryTransformable(simulator, address);
+                transformations[i] = m.transformation(new RawData(string.charAt(i)));
+                address = address + Memory.getWordSize();
+            }
+            MemoryTransformable m = new MemoryTransformable(simulator, address);
+            transformations[transformations.length - 1] = m.transformation(new RawData('\0'));
+
+            return new TransformationSequence(transformations);
+        } // case where input < max size
+
     }
 
     @Instruction

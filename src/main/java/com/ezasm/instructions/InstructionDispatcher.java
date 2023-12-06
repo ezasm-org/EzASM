@@ -1,14 +1,21 @@
 package com.ezasm.instructions;
 
 import com.ezasm.instructions.implementation.*;
+import com.ezasm.instructions.targets.IAbstractTarget;
+import com.ezasm.instructions.targets.input.ImmediateInput;
+import com.ezasm.instructions.targets.inputoutput.RegisterInputOutput;
+import com.ezasm.simulation.Registers;
 import com.ezasm.simulation.Simulator;
 import com.ezasm.instructions.exception.InstructionLoadException;
 import com.ezasm.instructions.exception.IllegalInstructionException;
 import com.ezasm.instructions.exception.InstructionDispatchException;
 import com.ezasm.parsing.Line;
 import com.ezasm.simulation.exception.SimulationInterruptedException;
+import com.ezasm.simulation.transform.Transformation;
 import com.ezasm.simulation.transform.TransformationSequence;
 import com.ezasm.simulation.exception.SimulationException;
+import com.ezasm.simulation.transform.transformable.InputOutputTransformable;
+import com.ezasm.util.RawData;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -168,6 +175,7 @@ public class InstructionDispatcher {
      */
     public void execute(Line line) throws SimulationException, SimulationInterruptedException {
         DispatchInstruction dispatch = getInstruction(line.getInstruction().text(), line.getArgumentTypes());
+
         if (dispatch == null) {
             throw new IllegalInstructionException(line.getInstruction().text());
         }
